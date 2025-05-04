@@ -1,0 +1,9 @@
+---
+# defaults file for prometheus
+prometheus_version: "2.47.0"
+prometheus_url: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-arm64.tar.gz"
+prometheus_install_path: "/usr/local/bin"
+prometheus_config_path: "/etc/prometheus/prometheus.yml"
+prometheus_data_dir: "/var/lib/prometheus"
+
+prometheus_spring_boot_app_target: "192.168.56.201:1235"

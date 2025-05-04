@@ -1,0 +1,52 @@
+---
+    - name: Prometheus | Ensure Python is installed
+      raw: test -e /usr/bin/python || (apt -y update && apt install -y python3)
+      changed_when: false
+
+    - name: Prometheus | Ensure Prometheus directory exists
+      ansible.builtin.file:
+        path: "/tmp/prometheus_{{ prometheus_version }}"
+        state: directory
+
+    - name: Prometheus | Download Prometheus
+      ansible.builtin.get_url:
+        url: "{{ prometheus_url }}"
+        dest: "/tmp/prometheus_{{ prometheus_version }}.tar.gz"
+        mode: '0755'
+        validate_certs: no
+
+    - name: Prometheus | Extract Prometheus
+      ansible.builtin.unarchive:
+        src: "/tmp/prometheus_{{ prometheus_version }}.tar.gz"
+        dest: "/tmp/prometheus_{{ prometheus_version }}"
+        remote_src: yes
+
+    - name: Prometheus | Move Prometheus binary to /usr/local/bin
+      ansible.builtin.copy:
+        src: "/tmp/prometheus_{{ prometheus_version }}/prometheus-{{ prometheus_version }}.linux-arm64/prometheus"
+        dest: "{{ prometheus_install_path }}/prometheus"
+        mode: '0755'
+        owner: root
+        group: root
+        remote_src: yes
+
+    - name: Prometheus | Ensure Prometheus config directory exists
+      ansible.builtin.file:
+        path: "/etc/prometheus"
+        state: directory
+
+    - name: Prometheus | Copy Prometheus configuration file from template
+      ansible.builtin.template:
+        src: "templates/prometheus.yml.j2"
+        dest: "{{ prometheus_config_path }}"
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Prometheus | Start Prometheus in the background using nohup
+      ansible.builtin.shell:
+        cmd: "nohup {{ prometheus_install_path }}/prometheus --config.file={{ prometheus_config_path }} --storage.tsdb.path={{ prometheus_data_dir }} &"
+        chdir: "{{ prometheus_install_path }}"
+      async: 0
+      poll: 0
+
